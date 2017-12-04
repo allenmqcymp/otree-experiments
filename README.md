@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # oTree
 
 oTree is a framework based on Python and Django that lets you build:
@@ -202,3 +203,7 @@ Contact chris@otree.org with bug reports.
 ## Related repositories
 
 The oTree core libraries are [here](https://github.com/oTree-org/otree-core).
+=======
+# otree-experiments
+Economic experiments for Colby College's CELL, made using the oTree framework.
+>>>>>>> refs/remotes/origin/master
