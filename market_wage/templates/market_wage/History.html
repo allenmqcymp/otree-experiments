@@ -1,0 +1,78 @@
+{% extends "global/Page.html" %}
+{% load staticfiles otree %}
+{% load customtags %}
+
+{% block title %}
+    Round {{ subsession.round_number }} of {{ Constants.num_rounds }}
+{% endblock %}
+
+
+{% block content %}
+
+    <h1>Round History</h1>
+        <div class="well well-lg">
+            <table class="table">
+                <tr>
+                    <th>Round Number</th>
+                    <th>Revenue</th>
+                    <th>Forecast</th>
+                    <th>Firm Choice (Wage)</th>
+                    <th>Worker Choice (Effort)</th>
+                    <th>Firm Profit</th>
+                    <th>Worker Profit</th>
+                </tr>
+                {% for round in rounds %}
+                    {%  if round >= round_number %}
+                        <tr>
+                            <td>{{ round }}</td>
+                            <td>{% revenue_by_round_number round %}</td>
+                            <td>{% forecast_by_round_number round %}</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td>{{ round }}</td>
+                            <td>{% revenue_by_round_number round %}</td>
+                            <td>{% forecast_by_round_number round %}</td>
+                            <td>
+                                {% with round_adjust=round|add:"-1" %}
+                                    {% get_field_group groups|lookup:round_adjust "wage" %}
+                                {%  endwith %}
+                            </td>
+                            <td>
+                                {% with round_adjust=round|add:"-1" %}
+                                    {% get_field_group groups|lookup:round_adjust "effort" %}
+                                {%  endwith %}
+                            </td>
+                            <td>
+                                {% with round_adjust=round|add:"-1" %}
+                                    {% player_payoff_by_role groups|lookup:round_adjust "firm" %}
+                                {%  endwith %}
+                            </td>
+                            <td>
+                                {% with round_adjust=round|add:"-1" %}
+                                    {% player_payoff_by_role groups|lookup:round_adjust "worker" %}
+                                {%  endwith %}
+                            </td>
+                        </tr>
+                    {% endif %}
+
+                {% endfor %}
+            </table>
+        </div>
+
+
+
+    <p>Your profit is calculated by <strong>Profit = Wage - Cost(Effort)</strong></p>
+
+    <p id="cost-info"></p>
+
+    <p id="profit-info"></p>
+
+    {% next_button %}
+
+{% endblock %}
+

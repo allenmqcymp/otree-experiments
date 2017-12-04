@@ -1,0 +1,52 @@
+{% extends "global/Page.html" %}
+{% load staticfiles otree %}
+{% load customtags %}
+
+{% block title %}
+    Results after {{ Constants.num_rounds }} rounds
+{% endblock %}
+
+{% block content %}
+    <h1>Round History</h1>
+    <div class="well">
+        <table class="table">
+            <tr>
+                <th>Round Number</th>
+                <th>Revenue</th>
+                <th>Forecast</th>
+                <th>Firm Choice (Wage)</th>
+                <th>Worker Choice (Effort)</th>
+                <th>Firm Profit</th>
+                <th>Worker Profit</th>
+            </tr>
+            {% for g in groups %}
+                <tr>
+                    <td>{{ g.round_number }}</td>
+                    <td>{% revenue_by_round_number g.round_number %}</td>
+                    <td>{% forecast_by_round_number g.round_number %}</td>
+                    <td>
+                        {{g.wage}}
+                    </td>
+                    <td>
+                        {{g.effort}}
+                    </td>
+                    <td>
+                        {% player_payoff_by_role g "firm" %}
+                    </td>
+                    <td>
+                        {% player_payoff_by_role g "worker" %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <div>
+            <p>You were the <strong>{{ role }}</strong></p>
+            <p>The <strong>Firm's</strong> total payoff is <strong>{{ firm_total_payoff }}</strong></p>
+            <p>The <strong>Worker's</strong> total payoff is <strong>{{ worker_total_payoff }}</strong></p>
+        </div>
+    </div>
+    {% next_button %}
+{% endblock %}
+
+

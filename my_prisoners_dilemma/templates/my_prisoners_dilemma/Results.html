@@ -1,0 +1,26 @@
+{% extends "global/Page.html" %}
+{% load staticfiles otree %}
+
+{% block title %}
+    Results
+{% endblock %}
+
+{% block content %}
+
+    <p> You played one round of the Prisoner's Dilemma game</p>
+
+    <p> Your results is as follows</p>
+
+    <p>
+        You chose to {{ choice }} and the other player chose to {{ other_choice }} and so you
+        {% if player_result == 0 %}
+            are freed
+        {% else %}
+            get a {{ player_result }} year punishment!
+        {% endif %}
+    </p>
+
+
+{% endblock %}
+
+

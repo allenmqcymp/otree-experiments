@@ -1,0 +1,30 @@
+{% extends "global/Page.html" %}
+{% load staticfiles otree %}
+
+{% block title %}
+    <div>
+        Results of the game
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div>
+        The sum of two thirds of the average was {{ result }}
+        You chose {{ guess }} and the other players chose:
+        <table>
+            {% for p in other_players %}
+                <tr>
+                    <td> Player's guess: {{ p.guess }} </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div>
+        Therefore, based on the results, your payoff is:
+        {{ payoff }}
+    </div>
+    <p> Thanks for playing this game </p>
+    {% next_button %}
+{% endblock %}
+
+

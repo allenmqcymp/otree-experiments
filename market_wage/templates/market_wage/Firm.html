@@ -1,0 +1,239 @@
+{% extends "global/Page.html" %}
+{% load staticfiles otree %}
+{% load customtags %}
+
+{% block title %}
+    Round {{ subsession.round_number }} of {{ Constants.num_rounds }}:
+    {%  filter caps %}
+        {% forecast_by_round_number subsession.round_number %}
+    {% endfilter %}
+{% endblock %}
+
+{% block content %}
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-5">
+                <canvas id="myChart" width="400" height="400"></canvas>
+                <p> You are the <strong>Firm </strong>.
+                    Please select a wage.
+                    The effort level will be set by the worker.
+                </p>
+
+                <p> Your profit is calculated by <strong>Profit = (Revenue - Wage) * Effort</strong></p>
+
+    {% formfield group.wage %}
+
+    {% next_button %}
+            </div>
+            <div class="col-md-7">
+                <div class="well">
+                    <h4 style="text-align: center">Round History</h4>
+                    <table id="history-table" class="table table-hover">
+                        <tr>
+                            <th>Round Number</th>
+                            <th>Revenue</th>
+                            <th>Forecast</th>
+                            <th>Firm Choice (Wage)</th>
+                            <th>Worker Choice (Effort)</th>
+                            <th>Firm Profit</th>
+                            <th>Worker Profit</th>
+                        </tr>
+                        {% for round in rounds %}
+                            {%  if round >= round_number %}
+                                <tr>
+                                    <td>{{ round }}</td>
+                                    <td>{% revenue_by_round_number round %}</td>
+                                    <td>{% forecast_by_round_number round %}</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td>{{ round }}</td>
+                                    <td>{% revenue_by_round_number round %}</td>
+                                    <td>{% forecast_by_round_number round %}</td>
+                                    <td>
+                                        {% with round_adjust=round|add:"-1" %}
+                                            {% get_field_group groups|lookup:round_adjust "wage" %}
+                                        {%  endwith %}
+                                    </td>
+                                    <td>
+                                        {% with round_adjust=round|add:"-1" %}
+                                            {% get_field_group groups|lookup:round_adjust "effort" %}
+                                        {%  endwith %}
+                                    </td>
+                                    <td>
+                                        {% with round_adjust=round|add:"-1" %}
+                                            {% player_payoff_by_role groups|lookup:round_adjust "firm" %}
+                                        {%  endwith %}
+                                    </td>
+                                    <td>
+                                        {% with round_adjust=round|add:"-1" %}
+                                            {% player_payoff_by_role groups|lookup:round_adjust "worker" %}
+                                        {%  endwith %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <br>
+    <br>
+
+    {% include instructions_template %}
+{% endblock %}
+
+{%  block scripts %}
+
+    <script>
+        // CODE THAT DISPLAYS A DYNAMIC CHART - USES JQUERY and CHART.js LIBRARIES
+
+        // global variables
+
+        var EFFORT_LEVELS = [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 1.00];
+        var MAX_EFFORT = Math.max(...EFFORT_LEVELS);
+        var REVENUE = {{ revenue_this_round | json }};
+        var WAGE = $("input[name=wage]").val();
+        var COST = {
+                0.05: 1,
+                0.10: 3,
+                0.15: 5,
+                0.20: 7,
+                0.25: 10,
+                0.30: 13,
+                0.35: 17,
+                0.40: 20,
+                0.45: 24,
+                0.50: 28,
+                0.55: 33,
+                0.60: 37,
+                0.65: 42,
+                0.70: 47,
+                0.75: 52,
+                0.80: 57,
+                0.85: 63,
+                0.90: 68,
+                0.95: 74,
+                1.00: 80
+            };
+
+
+        // functions to calculate the payoff
+
+        function profitFirmCalculator(efforts, revenue, wage) {
+            // returns a list of profits which is a list of numbers
+            // generated from the formula
+            // each profit (value in the list) is calculated by
+            // profit = (revenue - wage) * effort_level
+            var profits = [];
+            for (var i = 0; i < efforts.length; i++) {
+                var profit = (revenue - wage) * (efforts[i]);
+                profits.push(profit);
+            }
+            return profits;
+        }
+
+        function profitWorkerCalculator(efforts, revenue, wage) {
+            // profit = wage - cost function
+            // if the cost function is changed in the models backend,
+            // then this needs to be changed as well
+            var cost = COST;
+            var profits = [];
+            for (var i = 0; i < efforts.length; i++) {
+                var profit = wage - cost[efforts[i]];
+                profits.push(profit);
+            }
+            return profits;
+        }
+
+        // config function for the line chart
+
+        var config = {
+            type: "line",
+            data: {
+                labels: EFFORT_LEVELS,
+                datasets: [{
+                    label: "Firm",
+                    borderColor: 'red',
+                    backgroundColor: 'red',
+                    fill: false,
+                    data: profitFirmCalculator(EFFORT_LEVELS, REVENUE, WAGE),
+                }, {
+                    label: "Worker",
+                    fill: false,
+                    data: profitWorkerCalculator(EFFORT_LEVELS, REVENUE, WAGE),
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    xAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'effort level'
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'profit'
+                        },
+                        ticks: {
+                            max: REVENUE,
+                            min: 0 - COST[MAX_EFFORT]
+                        }
+                    }]
+                }
+            }
+        };
+
+        // main function to run when the window loads
+
+        window.onload = function() {
+            var ctx = document.getElementById("myChart").getContext("2d");
+            window.myChart = new Chart(ctx, config)
+        };
+
+        // slider event handler to update the chart every time a change event is fired
+        $(function() {
+           $("input[name=wage]").change(function() {
+               // we're assuming that the value in the slider is valid
+               // min and max are handled by the django backend
+               WAGE = $("input[name=wage]").val();
+               window.myChart.data.datasets[0].data = profitFirmCalculator(EFFORT_LEVELS, REVENUE, WAGE);
+               window.myChart.data.datasets[1].data = profitWorkerCalculator(EFFORT_LEVELS, REVENUE, WAGE);
+               window.myChart.update();
+           }) ;
+        });
+
+    </script>
+
+    // CDN for chart.js
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.bundle.js"></script>
+{%  endblock %}
+
+{%  block styles %}
+    <style type="text/css">
+        #history-table {
+            table-layout: fixed;
+            width: 100%;
+        }
+        .well {
+            margin-left: 5%;
+            margin-right: 5%;
+        }
+    </style>
+{%  endblock %}
+
+

@@ -1,0 +1,164 @@
+{% extends "global/Page.html" %}
+{% load staticfiles otree %}
+{% load customtags %}
+
+{% block title %}
+    Round {{ subsession.round_number }} of {{ Constants.num_rounds }}:
+    {%  filter caps %}
+        {% forecast_by_round_number subsession.round_number %}
+    {% endfilter %}
+{% endblock %}
+
+
+{% block content %}
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-5">
+                <div class="well">
+                    <p> You are the <strong>Workeral</strong>.
+                        The wage is <strong>{{ wage }}</strong>.
+                        Please select an effort.
+                    </p>
+
+                    {% formfield group.effort %}
+
+                    <p>Your profit is calculated by <br>
+                        <strong>Profit = Wage - Cost(Effort)</strong></p>
+
+                    <div id="useful-info">
+                         <p id="cost-info"></p>
+
+                        <p id="firm-profit-info"></p>
+
+                        <p id="profit-info"></p>
+                    </div>
+
+                    {% next_button %}
+                </div>
+            </div>
+
+            <div class="col-md-7">
+                <div class="well">
+                    <h4 style="text-align: center">Round History</h4>
+                    <table id="history-table" class="table table-hover">
+                        <tr>
+                            <th>Round Number</th>
+                            <th>Revenue</th>
+                            <th>Forecast</th>
+                            <th>Firm Choice (Wage)</th>
+                            <th>Worker Choice (Effort)</th>
+                            <th>Firm Profit</th>
+                            <th>Worker Profit</th>
+                        </tr>
+                        {% for round in rounds %}
+                            {%  if round >= round_number %}
+                                <tr>
+                                    <td>{{ round }}</td>
+                                    <td>{% revenue_by_round_number round %}</td>
+                                    <td>{% forecast_by_round_number round %}</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td>{{ round }}</td>
+                                    <td>{% revenue_by_round_number round %}</td>
+                                    <td>{% forecast_by_round_number round %}</td>
+                                    <td>
+                                        {% with round_adjust=round|add:"-1" %}
+                                            {% get_field_group groups|lookup:round_adjust "wage" %}
+                                        {%  endwith %}
+                                    </td>
+                                    <td>
+                                        {% with round_adjust=round|add:"-1" %}
+                                            {% get_field_group groups|lookup:round_adjust "effort" %}
+                                        {%  endwith %}
+                                    </td>
+                                    <td>
+                                        {% with round_adjust=round|add:"-1" %}
+                                            {% player_payoff_by_role groups|lookup:round_adjust "firm" %}
+                                        {%  endwith %}
+                                    </td>
+                                    <td>
+                                        {% with round_adjust=round|add:"-1" %}
+                                            {% player_payoff_by_role groups|lookup:round_adjust "worker" %}
+                                        {%  endwith %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <br>
+    <br>
+
+    {% include instructions_template %}
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        function displayCallback() {
+            $(function() {
+                var profitMsg = "";
+                var firmProfitMsg = "";
+                var costMsg = "";
+                var w_payoff = 0;
+                var f_payoff = 0;
+                var effort = $("input[name=effort]").val();
+                effort = parseFloat(effort, 10);
+                // if effort has not been selected yet
+                if (!effort) {
+                    profitMsg = "";
+                    costMsg = "";
+                }
+                else {
+                    var costFromEffort = {{ Constants.COST_FUNCTION|safe }};
+
+                    // calculate the payoff for the worker
+                    var costSubtract = costFromEffort[effort];
+                    w_payoff = {{ wage|safe }} - costSubtract;
+
+                    // calculate the payoff for the firm
+                    var f_payoff = Math.round(({{ revenue_this_round|safe }} - {{ wage|safe }}) * effort);
+
+                    costMsg = " Cost( " + effort + " ) = " + costSubtract;
+                    profitMsg = "Your Profit: " + w_payoff;
+                    firmProfitMsg = "Firm's Profit: " + f_payoff;
+                }
+                $("p#profit-info").text(profitMsg);
+                $("p#firm-profit-info").text(firmProfitMsg);
+                $("p#cost-info").text(costMsg);
+
+            });
+        }
+
+    $(function() {
+        // link the slider to a change event handler
+        // every time a change is detected, run the code for updating profit info
+        $("input[name=effort]").change(function() {
+            displayCallback();
+        });
+    });
+
+    </script>
+{%  endblock %}
+
+{%  block styles %}
+    <style type="text/css">
+        #history-table {
+            table-layout: fixed;
+            width: 100%;
+        }
+        #useful-info {
+            font-size: 1.2em;
+        }
+    </style>
+{%  endblock %}

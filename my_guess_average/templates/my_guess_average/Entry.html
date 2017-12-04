@@ -1,0 +1,14 @@
+{% extends "global/Page.html" %}
+{% load staticfiles otree %}
+
+{% block title %}
+<div> Guess 2/3rds of the average game - you know the drill </div>
+{% endblock %}
+
+{% block content %}
+
+    {% formfield player.guess label="Enter number from 0 to 100" %}
+
+    {% next_button %}
+
+{% endblock %}

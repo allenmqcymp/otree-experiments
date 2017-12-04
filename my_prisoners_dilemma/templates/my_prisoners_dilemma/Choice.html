@@ -1,0 +1,30 @@
+{% extends "global/Page.html" %}
+{% load staticfiles otree %}
+
+{% block title %}
+    Prisoner's Dilemma Choice
+{% endblock %}
+
+{% block content %}
+    <h4>Instructions</h4>
+    <p>
+        There are two players in this game. You are one of them.
+        Both of you are suspected of committing crimes.
+        The judge decides to offer you two a bargain:
+            Note: betray = to say that the other person committed a crime
+    </p>
+
+    <p>
+        If you betray the other person, you are set free and the other person
+        receives a 3 year sentence.
+        If the other person betrays you, then he/she is set free and you receive
+        a 3 year sentence.
+        If you both betray each other, then you both serve two year sentences.
+        If you both choose to remain silent, then both of you will serve only 1 year.
+    </p>
+
+    {% formfield player.prisoner_choice label="I choose to:" %}
+
+    {% next_button %}
+
+{% endblock %}
